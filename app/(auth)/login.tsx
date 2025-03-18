@@ -64,7 +64,7 @@ export default function LoginScreen() {
               initialValues={{ email: "", password: "" }} 
               onSubmit={() => {
                 dispatch(login());
-                router.replace('/(tabs)');
+                router.replace('/chat');
               }}
             >
               {({ handleChange, handleBlur, handleSubmit, values, errors, touched, isValid }) => (
