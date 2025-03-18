@@ -1,50 +1,110 @@
-# Welcome to your Expo app 👋
+📜 Virgil - React Native Expo Application
+🚀 About Virgil
+Virgil is a modern, elegant, and feature-rich React Native application built using Expo, leveraging Redux for state management, React Native Paper for UI components, and seamless authentication.
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+This application includes:
 
-## Get started
+Dark/Light Mode with Redux
+User Authentication System
+Modern UI with React Native Paper
+Navigation using React Navigation
+State Management with Redux Toolkit
+Image Upload with Expo Image Picker
+Responsive UI for mobile devices
+🛠 Tech Stack
+📱 React Native
+⚡ Expo
+🌍 React Navigation
+📦 Redux Toolkit
+🎨 React Native Paper
+🖼 Expo Image Picker
+🔐 Formik & Yup (Validation)
+⚡ TypeScript (Optional)
+📥 Installation & Setup
+Prerequisites
+Ensure you have the following installed:
 
-1. Install dependencies
+Node.js (>= 14)
+Expo CLI (npm install -g expo-cli)
+Git (optional)
+Clone the Repository
+sh
+Copy
+Edit
+git clone https://github.com/Rian354//virgil.git
+cd virgil
+Install Dependencies
+sh
+Copy
+Edit
+npm install
+# or
+yarn install
+Run the Application
+Start the Expo development server:
 
-   ```bash
-   npm install
-   ```
+sh
+Copy
+Edit
+npm start
+# or
+expo start
+Scan the QR code using the Expo Go app on your phone (Android/iOS) or use an emulator.
 
-2. Start the app
+🎨 Features
+✅ Elegant & Responsive UI with React Native Paper
+✅ Dark & Light Mode with Redux Theme Toggle
+✅ Secure Authentication System
+✅ Navigation System using React Navigation
+✅ Form Validation using Formik & Yup
+✅ State Management with Redux Toolkit
+✅ Image Upload using Expo Image Picker
 
-   ```bash
-    npx expo start
-   ```
+📸 Screenshots
+Light Mode	Dark Mode
+📂 Project Structure
+bash
+Copy
+Edit
+Virgil/
+│── src/
+│   ├── components/    # Reusable UI Components
+│   ├── app/       # App Screens
+│   ├── redux/         # Redux Store & Slices
+│   ├── common/        # Utility & Theme files
+│   ├── assets/        # Images & Icons
+│   ├── app.json       # Expo Configuration
+│   ├── package.json   # Dependencies & Scripts
+│── README.md          # Documentation
+⚡ Usage
+1️⃣ Authentication
+Sign up / Log in using Email & Password.
+Navigate between screens after authentication.
+2️⃣ Theme Toggle
+Click the moon/sun icon to switch between Dark and Light Mode.
+3️⃣ Image Upload
+Upload your profile picture using Expo Image Picker.
+🚀 Contributing
+We welcome contributions! To contribute:
 
-In the output, you'll find options to open the app in a
+Fork the repository 📌
+Create a new branch: git checkout -b feature-branch
+Make changes & commit: git commit -m "Add new feature"
+Push the branch: git push origin feature-branch
+Create a Pull Request ✅
+🔗 Contact & Support
+💬 Have questions or feedback? Feel free to reach out!
+📧 Email: info@rian.fyi
+📌 GitHub: GitHub Profile
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+📜 License
+This project is MIT Licensed. You are free to modify and distribute it.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+🎉 Happy Coding with Virgil! 🚀
 
-## Get a fresh project
 
-When you're ready, run:
 
-```bash
-npm run reset-project
-```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
 
-## Learn more
 
-To learn more about developing your project with Expo, look at the following resources:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
