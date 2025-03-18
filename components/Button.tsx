@@ -1,34 +1,51 @@
 import { StyleSheet, View, Pressable, Text } from 'react-native';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { Ionicons } from '@expo/vector-icons';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/redux/store';
+import { getColors } from '@/theme/colors';
 
 type Props = {
   label: string;
-  theme?: 'primary';
+  theme?: 'primary' | 'secondary';
   onPress?: () => void;
+  icon?: string;
 };
 
-export default function Button({ label, theme, onPress }: Props) {
-  if (theme === 'primary') {
-    return (
-      <View
-        style={[
-          styles.buttonContainer,
-          { borderWidth: 4, borderColor: '#ffd33d', borderRadius: 18 },
-        ]}>
-        <Pressable
-          style={[styles.button, { backgroundColor: '#fff' }]}
-          onPress={onPress}>
-          <FontAwesome name="picture-o" size={18} color="#25292e" style={styles.buttonIcon} />
-          <Text style={[styles.buttonLabel, { color: '#25292e' }]}>{label}</Text>
-        </Pressable>
-      </View>
-    );
-  }
+export default function Button({ label, theme = 'primary', onPress, icon }: Props) {
+  const isDarkMode = useSelector((state: RootState) => state.theme.isDarkMode);
+  const colors = getColors(isDarkMode);
 
   return (
     <View style={styles.buttonContainer}>
-      <Pressable style={styles.button}>
-        <Text style={styles.buttonLabel}>{label}</Text>
+      <Pressable
+        style={[
+          styles.button,
+          {
+            backgroundColor: theme === 'primary' ? colors.primary.main : colors.background.paper,
+            borderColor: theme === 'primary' ? colors.primary.dark : colors.background.dark,
+            borderWidth: 1,
+          },
+        ]}
+        onPress={onPress}
+      >
+        {icon && (
+          <Ionicons
+            name={icon as any}
+            size={18}
+            color={theme === 'primary' ? colors.background.paper : colors.text.primary}
+            style={styles.buttonIcon}
+          />
+        )}
+        <Text
+          style={[
+            styles.buttonLabel,
+            {
+              color: theme === 'primary' ? colors.background.paper : colors.text.primary,
+            },
+          ]}
+        >
+          {label}
+        </Text>
       </Pressable>
     </View>
   );
@@ -36,26 +53,23 @@ export default function Button({ label, theme, onPress }: Props) {
 
 const styles = StyleSheet.create({
   buttonContainer: {
-    width: 320,
-    height: 68,
-    marginHorizontal: 20,
+    width: '100%',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 3,
+    marginVertical: 8,
   },
   button: {
-    borderRadius: 10,
+    borderRadius: 12,
     width: '100%',
-    height: '100%',
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
   },
   buttonIcon: {
-    paddingRight: 8,
+    marginRight: 8,
   },
   buttonLabel: {
-    color: '#fff',
     fontSize: 16,
+    fontWeight: '600',
   },
 });
