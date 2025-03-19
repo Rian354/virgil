@@ -8,9 +8,36 @@ import { useRouter } from 'expo-router';
 import { RootState } from '@/redux/store';
 import { getColors } from '@/theme/colors';
 import { Ionicons } from '@expo/vector-icons';
+import { apiRequest } from "@/common/API";
+import Markdown from "react-native-markdown-display";
+import { InlineMath, BlockMath } from "react-native-katex";
 
 const { width } = Dimensions.get('window');
 const MAX_WIDTH = Math.min(width * 0.75, 500);
+
+// Function to fix special characters (escaped quotes, new lines, etc.)
+const fixSpecialCharacters = (text: string) => {
+  return text
+    .replace(/\\"/g, '"') // Fix escaped quotes
+    .replace(/\\'/g, "'") // Fix escaped single quotes
+    .replace(/\\n/g, "\n") // Convert newline characters
+    .replace(/\*\*(.*?)\*\*/g, "**$1**") // Preserve bold formatting
+    .replace(/\*(.*?)\*/g, "*$1*"); // Preserve italic formatting
+};
+
+const containsLaTeX = (text: string) => {
+  return text.includes("$$") || text.includes("\\(") || text.includes("\\[");
+};
+
+const renderMessage = (text: string) => {
+  const cleanText = fixSpecialCharacters(text);
+
+  if (containsLaTeX(cleanText)) {
+    return <MathView math={cleanText} />;
+  }
+
+  return <Markdown>{cleanText}</Markdown>;
+};
 
 const SUPPORTED_FILE_TYPES = [
   { type: 'application/pdf', name: 'PDF' },
@@ -85,13 +112,48 @@ export default function ChatScreen() {
     setFiles(prev => prev.filter(file => file.uri !== uri));
   };
 
-  const sendMessage = () => {
-    if (message.trim() && ws.current) {
-      setMessages(prev => [...prev, { text: message, isBot: false }]);
-      ws.current.send(message);
-      setMessage('');
+    interface OllamaResponse {
+      result: string;
+      status: string;
     }
-  };
+
+ const callOllamaAPI = async (prompt: string) => {
+   const endpoint = "/chat";
+
+   const params = {
+     language: "en",
+   };
+
+   const data = {
+     prompt: prompt,
+   };
+
+   try {
+     const response = await apiRequest<any>("POST", endpoint, data, params);
+     return response
+
+   } catch (error) {
+     console.error("Failed to call Ollama API:", error);
+     return "Error: Unable to get response";
+   }
+ };
+
+ const sendMessage = async () => {
+   if (message.trim()) {
+     setMessages((prev) => [...prev, { text: message, isBot: false }]);
+
+     try {
+       const respText = await callOllamaAPI(message); // Await API response as formatted text
+       setMessages((prev) => [...prev, { text: respText, isBot: true }]);
+     } catch (error) {
+       console.error("Error in sendMessage:", error);
+       setMessages((prev) => [...prev, { text: "Failed to get response", isBot: true }]);
+     }
+
+     setMessage("");
+   }
+ };
+
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background.default }]}>
@@ -167,7 +229,7 @@ export default function ChatScreen() {
                       styles.messageText,
                       { color: item.isBot ? colors.text.primary : colors.background.paper }
                     ]}>
-                      {item.text}
+                      {renderMessage(item.text)}
                     </Text>
                   </Surface>
                 </View>
