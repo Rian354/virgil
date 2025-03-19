@@ -54,12 +54,12 @@ export default function VirgilScreen() {
   };
 
   return (
-    <Animated.View style={[styles.container, { 
+    <Animated.View style={[styles.container, {
       opacity: fadeAnim,
-      backgroundColor: colors.background.default 
+      backgroundColor: colors.background.default
     }]}>
       <Surface style={[styles.header, { backgroundColor: colors.primary.main }]} elevation={0}>
-        <Animated.View 
+        <Animated.View
           style={[
             styles.headerContent,
             {
@@ -72,8 +72,8 @@ export default function VirgilScreen() {
             },
           ]}
         >
-          <Avatar.Icon 
-            size={40} 
+          <Avatar.Icon
+            size={40}
             icon="medical-bag"
             style={[styles.avatar, { backgroundColor: colors.primary.dark }]}
             color={colors.background.paper}
@@ -85,12 +85,12 @@ export default function VirgilScreen() {
         </Animated.View>
       </Surface>
 
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={[styles.chatContainer, { backgroundColor: colors.background.default }]}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
-        <ScrollView 
+        <ScrollView
           ref={scrollViewRef}
           style={styles.messagesContainer}
           contentContainerStyle={styles.messagesContent}
@@ -106,16 +106,16 @@ export default function VirgilScreen() {
                 item.isBot ? null : { alignSelf: 'flex-end' }
               ]}
             >
-              <Surface 
+              <Surface
                 style={[
                   styles.messageBubble,
                   item.isBot ? [styles.botBubble, { backgroundColor: colors.background.paper }] : [styles.userBubble, { backgroundColor: colors.primary.light }]
-                ]} 
+                ]}
                 elevation={0}
               >
                 {item.isBot && (
-                  <Avatar.Icon 
-                    size={24} 
+                  <Avatar.Icon
+                    size={24}
                     icon="medical-bag"
                     style={[styles.messageAvatar, { backgroundColor: colors.primary.main }]}
                     color={colors.background.paper}
@@ -276,4 +276,4 @@ const styles = StyleSheet.create({
     height: 44,
     margin: 0,
   },
-}); 
+});

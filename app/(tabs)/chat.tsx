@@ -1,6 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, ScrollView, KeyboardAvoidingView, Platform, StyleSheet, Dimensions } from 'react-native';
-import { TextInput, Button, Text, Card, List, IconButton, Surface, Avatar, Chip } from 'react-native-paper';
+import {
+  View,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Dimensions,
+  Animated,
+} from 'react-native';
+import {
+  TextInput,
+  Button,
+  Text,
+  Card,
+  IconButton,
+  Surface,
+  Avatar,
+  Chip,
+  ActivityIndicator,
+} from 'react-native-paper';
 import axios from 'axios';
 import * as DocumentPicker from 'expo-document-picker';
 import { useDispatch, useSelector } from 'react-redux';
@@ -15,30 +33,6 @@ import { InlineMath, BlockMath } from "react-native-katex";
 const { width } = Dimensions.get('window');
 const MAX_WIDTH = Math.min(width * 0.75, 500);
 
-// Function to fix special characters (escaped quotes, new lines, etc.)
-const fixSpecialCharacters = (text: string) => {
-  return text
-    .replace(/\\"/g, '"') // Fix escaped quotes
-    .replace(/\\'/g, "'") // Fix escaped single quotes
-    .replace(/\\n/g, "\n") // Convert newline characters
-    .replace(/\*\*(.*?)\*\*/g, "**$1**") // Preserve bold formatting
-    .replace(/\*(.*?)\*/g, "*$1*"); // Preserve italic formatting
-};
-
-const containsLaTeX = (text: string) => {
-  return text.includes("$$") || text.includes("\\(") || text.includes("\\[");
-};
-
-const renderMessage = (text: string) => {
-  const cleanText = fixSpecialCharacters(text);
-
-  if (containsLaTeX(cleanText)) {
-    return <MathView math={cleanText} />;
-  }
-
-  return <Markdown>{cleanText}</Markdown>;
-};
-
 const SUPPORTED_FILE_TYPES = [
   { type: 'application/pdf', name: 'PDF' },
   { type: 'text/plain', name: 'Text' },
@@ -48,54 +42,70 @@ const SUPPORTED_FILE_TYPES = [
   { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', name: 'XLSX' },
 ];
 
+// Function to fix special characters and format Markdown/LaTeX text
+const fixSpecialCharacters = (text: string) => {
+  return text
+    .replace(/\\"/g, '"')
+    .replace(/\\'/g, "'")
+    .replace(/\\n/g, "\n")
+    .replace(/\*\*(.*?)\*\*/g, "**$1**")
+    .replace(/\*(.*?)\*/g, "*$1*");
+};
+
+const containsLaTeX = (text: string) => {
+  return text.includes("$$") || text.includes("\\(") || text.includes("\\[");
+};
+
+const renderMessage = (text: string) => {
+  const cleanText = fixSpecialCharacters(text);
+  if (containsLaTeX(cleanText)) {
+    return <BlockMath math={cleanText.replace(/\$\$/g, "")} />;
+  }
+  return <Markdown>{cleanText}</Markdown>;
+};
+
 export default function ChatScreen() {
   const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
+  const isDarkMode = useSelector((state: RootState) => state.theme.isDarkMode);
+  const colors = getColors(isDarkMode);
   const router = useRouter();
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Array<{ text: string; isBot: boolean }>>([]);
-  const ws = useRef<WebSocket | null>(null);
   const [files, setFiles] = useState<Array<{ name: string; uri: string }>>([]);
+  const [loading, setLoading] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
-  const isDarkMode = useSelector((state: RootState) => state.theme.isDarkMode);
-  const colors = getColors(isDarkMode);
-
-
-  // const [isMounted, setIsMounted] = useState(false);
-
-//    useEffect(() => {
-//      setIsMounted(true);
-//    }, []);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const ws = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-//      if(!isLoggedIn && isMounted){
-//                router.replace('/');
-//      }
-    if (isLoggedIn && !ws.current) {
-      ws.current = new WebSocket('ws://localhost:5000');
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
 
+    if (isLoggedIn) {
+      ws.current = new WebSocket('ws://localhost:5000');
       ws.current.onmessage = (event) => {
         const response = event.data;
         setMessages(prev => [...prev, { text: response, isBot: true }]);
       };
-
       return () => {
         ws.current?.close();
       };
     }
-  }, []);
+  }, [isLoggedIn]);
 
   const pickDocument = async () => {
     if (!isLoggedIn) {
       router.push('/');
       return;
     }
-
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: SUPPORTED_FILE_TYPES.map(type => type.type),
         multiple: true,
       });
-
       if (!result.canceled && result.assets) {
         const newFiles = result.assets.map(file => ({
           name: file.name,
@@ -112,59 +122,69 @@ export default function ChatScreen() {
     setFiles(prev => prev.filter(file => file.uri !== uri));
   };
 
-    interface OllamaResponse {
-      result: string;
-      status: string;
+  interface OllamaResponse {
+    result: string;
+    status: string;
+  }
+
+  const callOllamaAPI = async (prompt: string) => {
+    const endpoint = "/chat";
+    const params = { language: "en" };
+    const data = { prompt: prompt };
+    try {
+      const response = await apiRequest<any>("POST", endpoint, data, params);
+      return response;
+    } catch (error) {
+      console.error("Failed to call Ollama API:", error);
+      return "Error: Unable to get response";
     }
+  };
 
- const callOllamaAPI = async (prompt: string) => {
-   const endpoint = "/chat";
-
-   const params = {
-     language: "en",
-   };
-
-   const data = {
-     prompt: prompt,
-   };
-
-   try {
-     const response = await apiRequest<any>("POST", endpoint, data, params);
-     return response
-
-   } catch (error) {
-     console.error("Failed to call Ollama API:", error);
-     return "Error: Unable to get response";
-   }
- };
-
- const sendMessage = async () => {
-   if (message.trim()) {
-     setMessages((prev) => [...prev, { text: message, isBot: false }]);
-
-     try {
-       const respText = await callOllamaAPI(message); // Await API response as formatted text
-       setMessages((prev) => [...prev, { text: respText, isBot: true }]);
-     } catch (error) {
-       console.error("Error in sendMessage:", error);
-       setMessages((prev) => [...prev, { text: "Failed to get response", isBot: true }]);
-     }
-
-     setMessage("");
-   }
- };
-
+  const sendMessage = async () => {
+    if (message.trim()) {
+      setMessages(prev => [...prev, { text: message, isBot: false }]);
+      setLoading(true);
+      try {
+        const respText = await callOllamaAPI(message);
+        setMessages(prev => [...prev, { text: respText, isBot: true }]);
+      } catch (error) {
+        console.error("Error in sendMessage:", error);
+        setMessages(prev => [...prev, { text: "Failed to get response", isBot: true }]);
+      }
+      setMessage('');
+      setLoading(false);
+    }
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background.default }]}>
-      <Surface style={[styles.header, { 
-        backgroundColor: colors.background.default,
-        borderBottomColor: colors.background.dark
-      }]} elevation={0}>
-        <Text style={[styles.headerTitle, { color: colors.text.primary }]}>Chat</Text>
+      <Surface style={[styles.header, { backgroundColor: colors.background.default, borderBottomColor: colors.background.dark }]} elevation={0}>
+        <Animated.View
+          style={[
+            styles.headerContent,
+            {
+              transform: [{
+                translateY: fadeAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-20, 0],
+                }),
+              }],
+            },
+          ]}
+        >
+          <Avatar.Icon
+            size={40}
+            icon="chat"
+            style={[styles.avatar, { backgroundColor: colors.primary.main }]}
+            color={colors.background.paper}
+          />
+          <View style={styles.headerText}>
+            <Text style={[styles.headerTitle, { color: colors.text.primary }]}>Chat</Text>
+          </View>
+        </Animated.View>
       </Surface>
 
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={[styles.chatContainer, { backgroundColor: colors.background.default }]}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
@@ -174,18 +194,9 @@ export default function ChatScreen() {
             <View style={[styles.fileListContainer, { backgroundColor: colors.background.paper }]}>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 {files.map((file, index) => (
-                  <Surface 
-                    key={index} 
-                    style={[styles.fileChip, { backgroundColor: colors.background.default }]}
-                    elevation={0}
-                  >
+                  <Surface key={index} style={[styles.fileChip, { backgroundColor: colors.background.default }]} elevation={0}>
                     <Ionicons name="document-outline" size={16} color={colors.primary.main} />
-                    <Text 
-                      numberOfLines={1} 
-                      style={[styles.fileChipText, { color: colors.text.primary }]}
-                    >
-                      {file.name}
-                    </Text>
+                    <Text numberOfLines={1} style={[styles.fileChipText, { color: colors.text.primary }]}>{file.name}</Text>
                     <IconButton
                       icon="close-circle"
                       size={18}
@@ -198,76 +209,60 @@ export default function ChatScreen() {
               </ScrollView>
             </View>
 
-            <ScrollView 
+            <ScrollView
               ref={scrollViewRef}
               style={styles.messagesContainer}
               contentContainerStyle={styles.messagesContent}
               onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
             >
               {messages.map((item, index) => (
-                <View key={index} style={[
-                  styles.messageWrapper,
-                  item.isBot ? styles.botMessageWrapper : styles.userMessageWrapper
-                ]}>
-                  <Surface 
-                    style={[
-                      styles.messageBubble,
-                      item.isBot ? styles.answerBubble : styles.questionBubble,
-                      { backgroundColor: item.isBot ? colors.background.paper : colors.primary.main }
-                    ]} 
-                    elevation={0}
-                  >
+                <View key={index} style={[styles.messageWrapper, item.isBot ? styles.botMessageWrapper : styles.userMessageWrapper]}>
+                  <Surface style={[
+                    styles.messageBubble,
+                    item.isBot
+                      ? [styles.answerBubble, { backgroundColor: colors.background.paper }]
+                      : [styles.questionBubble, { backgroundColor: colors.primary.main }]
+                  ]} elevation={0}>
                     {item.isBot && (
-                      <Avatar.Icon 
-                        size={24} 
+                      <Avatar.Icon
+                        size={24}
                         icon="robot"
                         style={[styles.botAvatar, { backgroundColor: colors.primary.main }]}
                         color={colors.background.paper}
                       />
                     )}
-                    <Text style={[
-                      styles.messageText,
-                      { color: item.isBot ? colors.text.primary : colors.background.paper }
-                    ]}>
+                    <Text style={[styles.messageText, { color: item.isBot ? colors.text.primary : colors.background.paper }]}>
                       {renderMessage(item.text)}
                     </Text>
                   </Surface>
                 </View>
               ))}
+              {loading && (
+                <ActivityIndicator
+                  animating={true}
+                  size="large"
+                  color={colors.primary.main}
+                  style={styles.loader}
+                />
+              )}
             </ScrollView>
           </>
         ) : (
           <View style={styles.emptyState}>
             <Surface style={[styles.emptyStateCard, { backgroundColor: colors.background.paper }]} elevation={0}>
-              <Ionicons 
-                name="cloud-upload-outline" 
-                size={48} 
-                color={colors.primary.main} 
-              />
-              <Text style={[styles.emptyStateTitle, { color: colors.text.primary }]}>
-                Start a Conversation
-              </Text>
-              <Text style={[styles.emptyStateSubtitle, { color: colors.text.secondary }]}>
-                Upload documents to chat about them
-              </Text>
-              
+              <Ionicons name="cloud-upload-outline" size={48} color={colors.primary.main} />
+              <Text style={[styles.emptyStateTitle, { color: colors.text.primary }]}>Start a Conversation</Text>
+              <Text style={[styles.emptyStateSubtitle, { color: colors.text.secondary }]}>Upload documents to chat about them</Text>
               <View style={styles.supportedFilesContainer}>
-                <Text style={[styles.supportedFilesTitle, { color: colors.text.secondary }]}>
-                  Supported file types:
-                </Text>
+                <Text style={[styles.supportedFilesTitle, { color: colors.text.secondary }]}>Supported file types:</Text>
                 <View style={styles.fileTypeChips}>
                   {SUPPORTED_FILE_TYPES.map((fileType, index) => (
-                    <Chip
-                      key={index}
-                      style={[styles.fileTypeChip, { backgroundColor: colors.background.default }]}
-                      textStyle={{ color: colors.text.primary }}
-                    >
+                    <Chip key={index} style={[styles.fileTypeChip, { backgroundColor: colors.background.default }]} textStyle={{ color: colors.text.primary }}>
                       {fileType.name}
                     </Chip>
                   ))}
                 </View>
               </View>
-
               <Button
                 mode="contained"
                 onPress={pickDocument}
@@ -284,12 +279,9 @@ export default function ChatScreen() {
         )}
 
         {files.length > 0 && (
-          <Surface style={[styles.inputContainer, { 
-            backgroundColor: colors.background.paper,
-            borderTopColor: colors.background.dark
-          }]} elevation={0}>
+          <Surface style={[styles.inputContainer, { backgroundColor: colors.background.paper, borderTopColor: colors.background.dark }]} elevation={0}>
             <IconButton
-              icon="document-attach"
+              icon="paperclip"
               size={24}
               iconColor={colors.primary.main}
               onPress={pickDocument}
@@ -297,11 +289,11 @@ export default function ChatScreen() {
             />
             <TextInput
               mode="outlined"
-              placeholder="Type your message..."
+              placeholder="Ask Virgil anything..."
               value={message}
               onChangeText={setMessage}
               style={[styles.input, { backgroundColor: colors.background.paper }]}
-              outlineStyle={styles.inputOutline}
+              outlineStyle={[styles.inputOutline, { borderColor: colors.primary.light }]}
               contentStyle={styles.inputContent}
               theme={{
                 colors: {
@@ -311,6 +303,7 @@ export default function ChatScreen() {
                   background: colors.background.paper,
                 },
               }}
+              onSubmitEditing={sendMessage}
             />
             <IconButton
               icon="send"
@@ -338,6 +331,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: 1,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatar: {
+    marginRight: 12,
+  },
+  headerText: {
+    marginLeft: 12,
   },
   headerTitle: {
     fontSize: 24,
@@ -460,7 +463,6 @@ const styles = StyleSheet.create({
   fileTypeChips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
   },
   fileTypeChip: {
     marginRight: 8,
@@ -473,5 +475,9 @@ const styles = StyleSheet.create({
   emptyStateButtonContent: {
     paddingVertical: 8,
   },
+  loader: {
+    marginTop: 16,
+  },
 });
 
+export default ChatScreen;
