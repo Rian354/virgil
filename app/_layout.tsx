@@ -20,7 +20,7 @@ function RootLayoutNav() {
 
     if (!isLoggedIn && !inAuthGroup) {
       // Redirect to login if not logged in and not already in auth group
-      router.replace('/(auth)/login');
+      router.replace('/');
     } else if (isLoggedIn && inAuthGroup) {
       // Redirect to home if logged in and still in auth group
       router.replace('/virgil');

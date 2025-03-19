@@ -5,7 +5,6 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 import { getColors } from '@/theme/colors';
 import { Ionicons } from '@expo/vector-icons';
-import { staggeredFadeIn } from '@/utils/animations';
 import { AnimatedListItem } from '@/components/AnimatedListItem';
 
 const { width } = Dimensions.get('window');
@@ -43,6 +42,8 @@ export default function VirgilScreen() {
       ws.current?.close();
     };
   }, []);
+
+  useEffect
 
   const sendMessage = () => {
     if (message.trim() && ws.current) {

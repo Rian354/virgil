@@ -32,7 +32,17 @@ export default function ChatScreen() {
   const isDarkMode = useSelector((state: RootState) => state.theme.isDarkMode);
   const colors = getColors(isDarkMode);
 
+
+  // const [isMounted, setIsMounted] = useState(false);
+
+//    useEffect(() => {
+//      setIsMounted(true);
+//    }, []);
+
   useEffect(() => {
+//      if(!isLoggedIn && isMounted){
+//                router.replace('/');
+//      }
     if (isLoggedIn && !ws.current) {
       ws.current = new WebSocket('ws://localhost:5000');
 
@@ -45,7 +55,7 @@ export default function ChatScreen() {
         ws.current?.close();
       };
     }
-  }, [isLoggedIn]);
+  }, []);
 
   const pickDocument = async () => {
     if (!isLoggedIn) {
