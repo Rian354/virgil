@@ -29,7 +29,6 @@ export const apiRequest = async <T>(
 ): Promise<T> => {
   try {
     await attachAuthToken(); // Ensure the token is set before making a request
-
     const config: AxiosRequestConfig = {
       method,
       url: endpoint,

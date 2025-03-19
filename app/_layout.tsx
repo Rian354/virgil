@@ -23,7 +23,7 @@ function RootLayoutNav() {
       router.replace('/(auth)/login');
     } else if (isLoggedIn && inAuthGroup) {
       // Redirect to home if logged in and still in auth group
-      router.replace('/(tabs)');
+      router.replace('/virgil');
     }
   }, [isLoggedIn, segments]);
 

@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Formik } from "formik";
+import axios from "axios";  // 🔹 Import Axios
 import * as yup from "yup";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
@@ -18,16 +19,18 @@ import { login } from "@/redux/slices/authSlice";
 import { useRouter } from "expo-router";
 import { Button, TextInput, Surface } from "react-native-paper";
 import { getColors } from "@/theme/colors";
-
+import {apiRequest} from "@/common/API";
 const PlaceholderImage = require("@/assets/images/background-image.png");
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 const CARD_PADDING = width > 500 ? 48 : 24;
 
 const loginValidationSchema = yup.object().shape({
   email: yup.string().email("Invalid email").required("Email is required"),
   password: yup.string().min(6, "Password must be at least 6 characters").required("Password is required"),
 });
+
+const API_URL = "http://localhost:8000"; // 🔹 Replace with your actual backend URL
 
 export default function LoginScreen() {
   const dispatch = useDispatch();
@@ -36,36 +39,58 @@ export default function LoginScreen() {
   const colors = getColors(isDarkMode);
   const navigation = useNavigation();
 
+const fetchUserData = async (email: string, password: string) => {
+  try {
+    return await apiRequest("GET", `/login?email=${email}&password=${password}`, null, null);
+  } catch (error) {
+    console.error("Failed to fetch user data:", error);
+  }
+};
+
+  const handleLogin = async (email: string, password: string) => {
+    try {
+
+     const response = fetchUserData(email, password);
+     console.log(response);
+//       const response = await axios.get(`${API_URL}/login`, {
+//         params: { username: email, password: password }, // 🔹 Sending email as username
+//       });
+
+      if (response) {
+        const token = response;//.data?.token
+        console.log("Login successful:", token);
+        dispatch(login({ token })); // 🔹 Store token in Redux
+        router.replace("/chat"); // 🔹 Navigate to chat screen
+      } else {
+        console.log("Login failed:", response.data.message);
+        alert("Login failed. Please check your credentials.");
+      }
+    } catch (error) {
+      console.error("Error logging in:", error);
+      alert("An error occurred while logging in.");
+    }
+  };
+
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={[styles.container, { backgroundColor: colors.background.default }]}
     >
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           <Surface style={[styles.card, { backgroundColor: colors.background.default }]} elevation={0}>
             <View style={styles.imageContainer}>
               <Surface style={[styles.imageWrapper, { backgroundColor: colors.background.default }]} elevation={0}>
-                <Image 
-                  source={PlaceholderImage}
-                  style={styles.image}
-                  resizeMode="contain"
-                />
+                <Image source={PlaceholderImage} style={styles.image} resizeMode="contain" />
               </Surface>
             </View>
             <Text style={[styles.welcomeText, { color: colors.text.primary }]}>Welcome Back</Text>
             <Text style={[styles.subtitleText, { color: colors.text.secondary }]}>Sign in to continue</Text>
 
-            <Formik 
-              validationSchema={loginValidationSchema} 
-              initialValues={{ email: "", password: "" }} 
-              onSubmit={() => {
-                dispatch(login());
-                router.replace('/chat');
-              }}
+            <Formik
+              validationSchema={loginValidationSchema}
+              initialValues={{ email: "", password: "" }}
+              onSubmit={(values) => handleLogin(values.email, values.password)}
             >
               {({ handleChange, handleBlur, handleSubmit, values, errors, touched, isValid }) => (
                 <View style={styles.form}>
@@ -76,12 +101,12 @@ export default function LoginScreen() {
                       left={<TextInput.Icon icon="email-outline" />}
                       style={[styles.input, { backgroundColor: colors.background.paper }]}
                       outlineStyle={styles.inputOutline}
-                      theme={{ 
-                        colors: { 
+                      theme={{
+                        colors: {
                           primary: colors.primary.main,
                           text: colors.text.primary,
                           background: colors.background.paper,
-                        } 
+                        },
                       }}
                       keyboardType="email-address"
                       onChangeText={handleChange("email")}
@@ -101,12 +126,12 @@ export default function LoginScreen() {
                       left={<TextInput.Icon icon="lock-outline" />}
                       style={[styles.input, { backgroundColor: colors.background.paper }]}
                       outlineStyle={styles.inputOutline}
-                      theme={{ 
-                        colors: { 
+                      theme={{
+                        colors: {
                           primary: colors.primary.main,
                           text: colors.text.primary,
                           background: colors.background.paper,
-                        } 
+                        },
                       }}
                       onChangeText={handleChange("password")}
                       onBlur={handleBlur("password")}
@@ -117,9 +142,9 @@ export default function LoginScreen() {
                     )}
                   </View>
 
-                  <Button 
-                    mode="contained" 
-                    onPress={handleSubmit} 
+                  <Button
+                    mode="contained"
+                    onPress={handleSubmit}
                     style={[styles.button, { backgroundColor: colors.primary.main }]}
                     disabled={!isValid}
                     contentStyle={styles.buttonContent}
@@ -129,16 +154,16 @@ export default function LoginScreen() {
                   </Button>
 
                   <View style={styles.linksContainer}>
-                    <Button 
-                      mode="text" 
+                    <Button
+                      mode="text"
                       onPress={() => navigation.navigate("Forget")}
                       textColor={colors.primary.main}
                       labelStyle={styles.linkButtonLabel}
                     >
                       Forgot Password?
                     </Button>
-                    <Button 
-                      mode="text" 
+                    <Button
+                      mode="text"
                       onPress={() => navigation.navigate("SignUp")}
                       textColor={colors.primary.main}
                       labelStyle={styles.linkButtonLabel}
@@ -149,21 +174,6 @@ export default function LoginScreen() {
                 </View>
               )}
             </Formik>
-
-            {/* Temporary Development Button */}
-            <View style={{ marginTop: 20, paddingTop: 20, borderTopWidth: 1, borderTopColor: colors.background.dark }}>
-              <Button 
-                mode="contained" 
-                onPress={() => {
-                  dispatch(login());
-                  router.push('/(tabs)/virgil');
-                }}
-                style={[styles.button, { backgroundColor: colors.error }]}
-                labelStyle={[styles.buttonLabel, { color: '#fff' }]}
-              >
-                DEV: Go to Virgil Tab
-              </Button>
-            </View>
           </Surface>
         </View>
       </ScrollView>
@@ -265,4 +275,4 @@ const styles = StyleSheet.create({
   linkButtonLabel: {
     fontSize: 14,
   },
-}); 
+});
