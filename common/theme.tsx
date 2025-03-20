@@ -16,6 +16,9 @@ export const darkTheme = {
     ...MD3DarkTheme.colors,
     primary: "#bb86fc",
     background: "#121212",
-    text: "#ffffff",
+    text: "#ffffff", // used if you explicitly reference theme.colors.text
+    surface: "#303030",
+    onSurface: "#ffffff", // overrides text used on surfaces
+    onBackground: "#ffffff", // ensures text on background is white
   },
 };

@@ -1,13 +1,10 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
-import { API_CONFIG } from "./config"; 
+import { API_CONFIG } from "./config";
 
 // Create an Axios instance
 const apiClient = axios.create({
   baseURL: API_CONFIG.BASE_URL,
   timeout: 360000, // Timeout in milliseconds
-  headers: {
-    "Content-Type": "application/json",
-  }
 });
 
 // Function to set Authorization token dynamically
@@ -20,23 +17,25 @@ const attachAuthToken = async () => {
   }
 };
 
-// Generic API request function
 export const apiRequest = async <T>(
   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH",
   endpoint: string,
   data?: any,
-  params?: any
+  params?: any,
+  customConfig?: AxiosRequestConfig
 ): Promise<T> => {
   try {
-    //await attachAuthToken(); // Ensure the token is set before making a request
+    // Uncomment if you need to attach auth token:
+    // await attachAuthToken();
     const config: AxiosRequestConfig = {
       method,
       url: endpoint,
       data,
       params,
+      ...customConfig, // Merge custom config (e.g., custom headers)
     };
 
-    const response: AxiosResponse<T> = await apiClient(config);
+    const response = await apiClient(config);
     return response.data;
   } catch (error: any) {
     console.error("API Error:", error.response?.data || error.message);

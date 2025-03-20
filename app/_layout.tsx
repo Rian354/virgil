@@ -36,23 +36,23 @@ function RootLayoutNav() {
         },
       }}
     >
-      <Stack.Screen 
-        name="(tabs)" 
-        options={{ 
+      <Stack.Screen
+        name="(tabs)"
+        options={{
           headerShown: false,
           animation: 'fade',
           animationType: 'fade',
-          animationDuration: 200 
-        }} 
+          animationDuration: 200
+        }}
       />
-      <Stack.Screen 
-        name="(auth)" 
-        options={{ 
+      <Stack.Screen
+        name="(auth)"
+        options={{
           headerShown: false,
           animation: 'fade',
           animationType: 'fade',
-          animationDuration: 200 
-        }} 
+          animationDuration: 200
+        }}
       />
       <Stack.Screen name="+not-found" options={{ headerShown: false }} />
     </Stack>
