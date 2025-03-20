@@ -73,28 +73,32 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState<Array<{ text: string; isBot: boolean }>>([]);
   const [files, setFiles] = useState<Array<{ name: string; uri: string }>>([]);
   const [loading, setLoading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState('');
   const scrollViewRef = useRef<ScrollView>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const ws = useRef<WebSocket | null>(null);
 
-  useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
 
-    if (isLoggedIn) {
-      ws.current = new WebSocket('ws://localhost:5000');
-      ws.current.onmessage = (event) => {
-        const response = event.data;
-        setMessages(prev => [...prev, { text: response, isBot: true }]);
-      };
-      return () => {
-        ws.current?.close();
-      };
-    }
-  }, [isLoggedIn]);
+  // Uploads a single file using Axios
+const uploadFile = async (file) => {
+  // Convert the file URI to a Blob
+  const response = await fetch(file.uri);
+  const blob = await response.blob();
+
+  const formData = new FormData();
+  formData.append('file', blob, file.name);
+
+  try {
+    // Do not manually set Content-Type; Axios will set it automatically
+    const response = await axios.post('http://localhost:8001/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    console.log('File uploaded successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error uploading file:', error.response?.data || error.message);
+    throw error;
+  }
+};
 
   const pickDocument = async () => {
     if (!isLoggedIn) {
@@ -111,6 +115,18 @@ export default function ChatScreen() {
           name: file.name,
           uri: file.uri,
         }));
+
+        // Loop through each file with a for...of loop
+        for (const file of result.assets) {
+          try {
+            const data = await uploadFile(file);
+            console.log(data);
+            setUploadMessage(data.message);
+          } catch (err) {
+            console.error('Error uploading file:', err);
+          }
+        }
+
         setFiles(prev => [...prev, ...newFiles]);
       }
     } catch (err) {
@@ -191,6 +207,16 @@ export default function ChatScreen() {
       >
         {files.length > 0 ? (
           <>
+            <View>
+              <Animated.Text
+                style={[
+                  styles.uploadMessage,
+                  { color: colors.text.primary, opacity: fadeAnim },
+                ]}
+              >
+                {uploadMessage}
+              </Animated.Text>
+            </View>
             <View style={[styles.fileListContainer, { backgroundColor: colors.background.paper }]}>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 {files.map((file, index) => (
@@ -298,8 +324,8 @@ export default function ChatScreen() {
               theme={{
                 colors: {
                   primary: colors.primary.main,
-                  text: colors.text.primary,
-                  placeholder: colors.text.secondary,
+                  text: isDarkMode ? "#ffffff" : colors.text.primary,
+                  placeholder: isDarkMode ? "#ffffff" : colors.text.secondary,
                   background: colors.background.paper,
                 },
               }}
@@ -477,6 +503,10 @@ const styles = StyleSheet.create({
   },
   loader: {
     marginTop: 16,
+  },
+  uploadMessage: {
+    textAlign: 'center',
+    marginVertical: 8,
   },
 });
 
