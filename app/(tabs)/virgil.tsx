@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, ScrollView, KeyboardAvoidingView, Platform, StyleSheet, Dimensions, Animated } from 'react-native';
-import { TextInput, Button, Text, Surface, Avatar } from 'react-native-paper';
+import { TextInput, Button, Text, Surface, Avatar, IconButton, ActivityIndicator } from 'react-native-paper';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 import { getColors } from '@/theme/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedListItem } from '@/components/AnimatedListItem';
+import { apiRequest } from "@/common/API";
 
 const { width } = Dimensions.get('window');
 const MAX_WIDTH = Math.min(width * 0.75, 500);
@@ -23,6 +24,7 @@ export default function VirgilScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const isDarkMode = useSelector((state: RootState) => state.theme.isDarkMode);
   const colors = getColors(isDarkMode);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -30,26 +32,35 @@ export default function VirgilScreen() {
       duration: 300,
       useNativeDriver: true,
     }).start();
-
-    ws.current = new WebSocket('ws://localhost:5000');
-
-    ws.current.onmessage = (event) => {
-      const response = event.data;
-      setMessages(prev => [...prev, { text: response, isBot: true }]);
-    };
-
-    return () => {
-      ws.current?.close();
-    };
   }, []);
 
-  useEffect
+    const callOllamaAPI = async (prompt: string) => {
+      const endpoint = "/llm_chat";
+      const params = { language: "en" };
+      const data = { prompt: prompt };
+      try {
+        const response = await apiRequest<any>("POST", endpoint, data, params);
+        return response;
+      } catch (error) {
+        console.error("Failed to call LLM Ollama API:", error);
+        return "Error: Unable to get LLM response";
+      }
+    };
 
-  const sendMessage = () => {
-    if (message.trim() && ws.current) {
+
+  const sendMessage = async () => {
+    if (message.trim()) {
       setMessages(prev => [...prev, { text: message, isBot: false }]);
-      ws.current.send(message);
+      setLoading(true);
+      try {
+        const respText = await callOllamaAPI(message);
+        setMessages(prev => [...prev, { text: respText, isBot: true }]);
+      } catch (error) {
+        console.error("Error in sendMessage:", error);
+        setMessages(prev => [...prev, { text: "Failed to get response", isBot: true }]);
+      }
       setMessage('');
+      setLoading(false);
     }
   };
 
@@ -130,6 +141,14 @@ export default function VirgilScreen() {
               </Surface>
             </AnimatedListItem>
           ))}
+      {loading && (
+                      <ActivityIndicator
+                        animating={true}
+                        size="large"
+                        color={colors.primary.main}
+                        style={styles.loader}
+                      />
+                    )}
         </ScrollView>
 
         <Animated.View style={[
@@ -163,15 +182,15 @@ export default function VirgilScreen() {
             }}
             onSubmitEditing={sendMessage}
           />
-          <Button
-            mode="contained"
-            onPress={sendMessage}
-            style={[styles.sendButton, { backgroundColor: colors.primary.main }]}
-            contentStyle={styles.sendButtonContent}
-            disabled={!message.trim()}
-          >
-            <Ionicons name="send" size={20} color={colors.background.paper} />
-          </Button>
+
+           <IconButton
+                        icon="send"
+                        size={24}
+                        iconColor={message.trim() ? colors.primary.main : colors.text.secondary}
+                        onPress={sendMessage}
+                        disabled={!message.trim()}
+                        style={styles.sendButton}
+                      />
         </Animated.View>
       </KeyboardAvoidingView>
     </Animated.View>
