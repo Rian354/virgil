@@ -191,7 +191,7 @@ const uploadFile = async (file) => {
           <Avatar.Icon
             size={40}
             icon="chat"
-            style={[styles.avatar, { backgroundColor: colors.primary.main }]}
+            style={[styles.avatar, { backgroundColor: colors.primary.main}]}
             color={colors.background.paper}
           />
           <View style={styles.headerText}>
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 16,
-    paddingTop: Platform.OS === 'ios' ? 60 : 16,
+    paddingTop: Platform.OS === 'ios' ? 40 : 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

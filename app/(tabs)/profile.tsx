@@ -35,8 +35,8 @@ export default function ProfileScreen() {
           theme={{ colors: { primary: colors.primary.main } }}
         />
         <View style={styles.headerText}>
-          <Text style={[styles.name, { color: colors.background.paper }]}>John Doe</Text>
-          <Text style={[styles.email, { color: colors.background.paper, opacity: 0.8 }]}>john.doe@example.com</Text>
+          <Text style={[styles.name, { color: colors.background.paper }]}>Rian Atri</Text>
+          <Text style={[styles.email, { color: colors.background.paper, opacity: 0.8 }]}>info@rian.fyi</Text>
         </View>
       </Surface>
 
